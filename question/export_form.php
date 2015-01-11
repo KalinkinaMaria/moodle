@@ -27,7 +27,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/formslib.php');
-
+require_once($CFG->dirroot . '/question/exportseveral_class.php');
 
 /**
  * Form to export questions from the question bank.
@@ -39,6 +39,8 @@ class question_export_form extends moodleform {
 
     protected function definition() {
         $mform = $this->_form;
+        $mform->registerNoSubmitButton('toseveral');
+        $mform->registerNoSubmitButton('toone');
 
         $defaultcategory = $this->_customdata['defaultcategory'];
         $contexts = $this->_customdata['contexts'];
@@ -64,11 +66,24 @@ class question_export_form extends moodleform {
         // Export options.
         $mform->addElement('header', 'general', get_string('general', 'form'));
 
-        $mform->addElement('questioncategory', 'category', get_string('exportcategory', 'question'), compact('contexts'));
-        $mform->setDefault('category', $defaultcategory);
-        $mform->addHelpButton('category', 'exportcategory', 'question');
+        $tomodeseveral = optional_param('toseveral', '', PARAM_TEXT);
+        if (!empty($tomodeseveral)) {
+            $url = moodle_url::make_file_url('/question', '/export.php');
+            $categorylist = new question_category_object(1, $url, $contexts);
+            $mform->addElement('static', 'catlist', '', $categorylist->output_edit_lists());
+            $mform->addElement('hidden', 'severalcategory', 1);
+        } else {
+            $mform->addElement('questioncategory', 'category', get_string('exportcategory', 'question'), compact('contexts'));
+            $mform->setDefault('category', $defaultcategory);
+            $mform->addHelpButton('category', 'exportcategory', 'question');
+        }
 
         $categorygroup = array();
+        if (!empty($tomodeseveral)) {
+            $categorygroup[] = $mform->createElement('submit', 'toone', get_string('writeone', 'question'));
+        } else {
+            $categorygroup[] = $mform->createElement('submit', 'toseveral', get_string('writeseveral', 'question'));
+        }
         $categorygroup[] = $mform->createElement('checkbox', 'cattofile', '', get_string('tofilecategory', 'question'));
         $categorygroup[] = $mform->createElement('checkbox', 'contexttofile', '', get_string('tofilecontext', 'question'));
         $mform->addGroup($categorygroup, 'categorygroup', '', '', false);
