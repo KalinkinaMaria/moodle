@@ -109,6 +109,17 @@ class qformat_default {
     }
 
     /**
+     * set the categories
+     * @param  array $categories array the category object
+     */
+    public function set_categories($categories) {
+        if (count($this->questions)) {
+            debugging('You shouldn\'t call setCategory after setQuestions');
+        }
+        $this->category = $categories;
+    }
+
+    /**
      * Set the specific questions to export. Should not include questions with
      * parents (sub questions of cloze question type).
      * Only used for question export.
@@ -764,7 +775,11 @@ class qformat_default {
         // get the questions (from database) in this category
         // only get q's with no parents (no cloze subquestions specifically)
         if ($this->category) {
-            $questions = get_questions_category($this->category, true);
+            $questions = array();
+            foreach ($this->category as $currentcategory) {
+                $question = get_questions_category($currentcategory, true);
+                $questions = array_merge($questions, $question);
+            }
         } else {
             $questions = $this->questions;
         }
